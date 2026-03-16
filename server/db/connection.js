@@ -1,10 +1,28 @@
 import mysql from 'mysql2/promise'
 
+function poolConfig() {
+  const url = process.env.DATABASE_URL
+  if (url) {
+    const u = new URL(url)
+    return {
+      host: u.hostname,
+      port: u.port ? Number(u.port) : 3306,
+      user: decodeURIComponent(u.username || ''),
+      password: decodeURIComponent(u.password || ''),
+      database: u.pathname?.replace(/^\//, '') || 'railway',
+    }
+  }
+  return {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'visitkirehe',
+  }
+}
+
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'visitkirehe',
+  ...poolConfig(),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

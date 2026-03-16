@@ -13,12 +13,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const schemaPath = path.join(__dirname, 'schema.sql')
 
 async function init() {
-  const config = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    multipleStatements: true,
-  }
+  const url = process.env.DATABASE_URL
+  const config = url
+    ? (() => {
+        const u = new URL(url)
+        return {
+          host: u.hostname,
+          port: u.port ? Number(u.port) : 3306,
+          user: decodeURIComponent(u.username || ''),
+          password: decodeURIComponent(u.password || ''),
+          multipleStatements: true,
+        }
+      })()
+    : {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || '',
+        multipleStatements: true,
+      }
+
   console.log('Connecting to MySQL at', config.host, 'as', config.user, '...')
   const conn = await mysql.createConnection(config)
   const sql = fs.readFileSync(schemaPath, 'utf8')
