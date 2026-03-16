@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-
-const API = '/api'
+import { apiUrl, resolveMediaUrl } from '../api/apiUrl'
 
 function StarRating({ rating }) {
   const full = Math.floor(rating)
@@ -20,7 +19,7 @@ export default function AccommodationPage() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    fetch(`${API}/accommodations`).then((r) => r.json()).then(setAccommodations)
+    fetch(apiUrl('/api/accommodations')).then((r) => r.json()).then(setAccommodations)
   }, [])
 
   const filtered = search.trim()
@@ -80,7 +79,7 @@ export default function AccommodationPage() {
               >
                 <div className="aspect-[4/3] overflow-hidden">
                   <img
-                    src={item.image}
+                    src={resolveMediaUrl(item.image)}
                     alt={item.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />

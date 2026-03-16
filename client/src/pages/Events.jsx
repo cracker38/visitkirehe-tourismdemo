@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-
-const API = '/api'
+import { apiUrl, resolveMediaUrl } from '../api/apiUrl'
 
 function formatDate(s) {
   if (!s) return ''
@@ -12,7 +11,7 @@ export default function EventsPage() {
   const [events, setEvents] = useState([])
 
   useEffect(() => {
-    fetch(`${API}/events`).then((r) => r.json()).then(setEvents)
+    fetch(apiUrl('/api/events')).then((r) => r.json()).then(setEvents)
   }, [])
 
   return (
@@ -51,7 +50,7 @@ export default function EventsPage() {
               >
                 <div className="md:w-64 flex-shrink-0 aspect-video md:aspect-square overflow-hidden">
                   <img
-                    src={event.image}
+                    src={resolveMediaUrl(event.image)}
                     alt={event.title}
                     className="w-full h-full object-cover"
                   />

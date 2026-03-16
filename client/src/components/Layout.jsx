@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { apiUrl } from '../api/apiUrl'
 import BackgroundMusic from './BackgroundMusic'
 import AudioMuteButton from './AudioMuteButton'
 
@@ -334,7 +335,7 @@ function Footer() {
   const handleNewsletter = async (e) => {
     e.preventDefault()
     try {
-      const res = await fetch('/api/newsletter', {
+      const res = await fetch(apiUrl('/api/newsletter'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

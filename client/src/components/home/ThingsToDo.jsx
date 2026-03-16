@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { resolveMediaUrl } from '../../api/apiUrl'
 
 export default function ThingsToDo({ activities }) {
   if (!activities?.length) return null
@@ -33,7 +34,7 @@ export default function ThingsToDo({ activities }) {
               >
                 <div className="aspect-video overflow-hidden relative">
                   <img
-                    src={item.image}
+                    src={resolveMediaUrl(item.image)}
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

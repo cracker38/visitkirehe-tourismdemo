@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-
-const API = '/api'
+import { apiUrl } from '../api/apiUrl'
 
 export default function GalleryPage() {
   const [images, setImages] = useState([])
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
-    fetch(`${API}/gallery`).then((r) => r.json()).then(setImages)
+    fetch(apiUrl('/api/gallery')).then((r) => r.json()).then(setImages)
   }, [])
 
   return (

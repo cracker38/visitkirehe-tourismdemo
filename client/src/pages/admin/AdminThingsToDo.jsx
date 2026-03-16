@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { activitiesApi, uploadFile } from '../../api/admin'
+import { resolveMediaUrl } from '../../api/apiUrl'
 import { toast } from '../../components/admin/Toast'
 
 const DEFAULT_ICONS = ['🌿', '🎭', '🛶', '🛒', '🏘️', '📷', '✨', '🏞️', '🍽️', '👣']
@@ -103,7 +104,7 @@ export default function AdminThingsToDo() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image</label>
                 {form.image && (
                   <div className="mb-2 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
-                    <img src={form.image} alt="" className="w-full h-24 object-cover" onError={(e) => { e.target.style.display = 'none' }} />
+                    <img src={resolveMediaUrl(form.image)} alt="" className="w-full h-24 object-cover" onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                 )}
                 <div className="flex gap-2 flex-wrap items-center">

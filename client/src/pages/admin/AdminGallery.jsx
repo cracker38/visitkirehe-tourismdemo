@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { galleryApi, uploadFile } from '../../api/admin'
+import { resolveMediaUrl } from '../../api/apiUrl'
 import { toast } from '../../components/admin/Toast'
 
 const CATEGORIES = ['Nature', 'Culture', 'Events', 'Tourism', 'Landscape', 'Markets']
@@ -101,7 +102,7 @@ export default function AdminGallery() {
             <div className="space-y-3">
               {form.src && (
                 <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
-                  <img src={form.src} alt="" className="w-full h-32 object-cover" onError={(e) => { e.target.style.display = 'none' }} />
+                  <img src={resolveMediaUrl(form.src)} alt="" className="w-full h-32 object-cover" onError={(e) => { e.target.style.display = 'none' }} />
                 </div>
               )}
               <div className="flex gap-2 flex-wrap items-center">
@@ -132,8 +133,8 @@ export default function AdminGallery() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {loading ? <p className="col-span-full text-center py-8 text-gray-500">Loading...</p> : list.map((img) => (
-          <div key={img.id} className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800">
-            <img src={img.src} alt={img.alt} className="w-full aspect-square object-cover" />
+            <div key={img.id} className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800">
+            <img src={resolveMediaUrl(img.src)} alt={img.alt} className="w-full aspect-square object-cover" />
             <div className="p-2 flex justify-between items-center flex-wrap gap-1">
               <span className="text-xs text-gray-500 dark:text-gray-400">{img.category}</span>
               <div className="flex gap-2">

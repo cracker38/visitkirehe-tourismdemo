@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Map from '../components/Map'
-
-const API = '/api'
+import { apiUrl, resolveMediaUrl } from '../api/apiUrl'
 
 export default function PlacesToVisit() {
   const [attractions, setAttractions] = useState([])
@@ -10,7 +9,7 @@ export default function PlacesToVisit() {
   const [filtered, setFiltered] = useState([])
 
   useEffect(() => {
-    fetch(`${API}/attractions`).then((r) => r.json()).then((data) => {
+    fetch(apiUrl('/api/attractions')).then((r) => r.json()).then((data) => {
       setAttractions(data)
       setFiltered(data)
     })
@@ -84,7 +83,7 @@ export default function PlacesToVisit() {
               >
                 <div className="md:w-72 flex-shrink-0 aspect-video md:aspect-square overflow-hidden">
                   <img
-                    src={item.image}
+                    src={resolveMediaUrl(item.image)}
                     alt={item.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />

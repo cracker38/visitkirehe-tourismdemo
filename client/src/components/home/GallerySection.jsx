@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { resolveMediaUrl } from '../../api/apiUrl'
 
 export default function GallerySection({ images }) {
   if (!images?.length) return null
@@ -29,7 +30,7 @@ export default function GallerySection({ images }) {
               className="aspect-square overflow-hidden rounded-lg group"
             >
               <img
-                src={img.src}
+                src={resolveMediaUrl(img.src)}
                 alt={img.alt}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />

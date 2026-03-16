@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-
-const API = '/api'
+import { apiUrl } from '../api/apiUrl'
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
@@ -11,7 +10,7 @@ export default function Contact() {
     e.preventDefault()
     setStatus('sending')
     try {
-      const res = await fetch(`${API}/contact`, {
+      const res = await fetch(apiUrl('/api/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

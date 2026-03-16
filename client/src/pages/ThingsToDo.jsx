@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-
-const API = '/api'
+import { apiUrl, resolveMediaUrl } from '../api/apiUrl'
 
 export default function ThingsToDoPage() {
   const [activities, setActivities] = useState([])
 
   useEffect(() => {
-    fetch(`${API}/activities`).then((r) => r.json()).then(setActivities)
+    fetch(apiUrl('/api/activities')).then((r) => r.json()).then(setActivities)
   }, [])
 
   return (
@@ -46,7 +45,7 @@ export default function ThingsToDoPage() {
               >
                 <div className="aspect-video overflow-hidden">
                   <img
-                    src={item.image}
+                    src={resolveMediaUrl(item.image)}
                     alt={item.title}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />

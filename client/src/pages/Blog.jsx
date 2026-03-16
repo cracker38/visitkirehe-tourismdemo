@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-
-const API = '/api'
+import { apiUrl, resolveMediaUrl } from '../api/apiUrl'
 
 function formatDate(s) {
   if (!s) return ''
@@ -12,7 +11,7 @@ export default function BlogPage() {
   const [posts, setPosts] = useState([])
 
   useEffect(() => {
-    fetch(`${API}/blog`).then((r) => r.json()).then(setPosts)
+    fetch(apiUrl('/api/blog')).then((r) => r.json()).then(setPosts)
   }, [])
 
   return (
@@ -52,7 +51,7 @@ export default function BlogPage() {
               >
                 <div className="aspect-video overflow-hidden">
                   <img
-                    src={post.image}
+                    src={resolveMediaUrl(post.image)}
                     alt={post.title}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />

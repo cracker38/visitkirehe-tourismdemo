@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { apiUrl } from './apiUrl'
 
-const baseURL = '/api/admin'
+const baseURL = apiUrl('/api/admin')
 
 function getToken() {
   return localStorage.getItem('adminToken')

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { resolveMediaUrl } from '../../api/apiUrl'
 
 function StarRating({ rating }) {
   const full = Math.floor(rating)
@@ -44,7 +45,7 @@ export default function Accommodation({ accommodations }) {
             >
               <div className="aspect-[4/3] overflow-hidden">
                 <img
-                  src={item.image}
+                  src={resolveMediaUrl(item.image)}
                   alt={item.name}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                 />

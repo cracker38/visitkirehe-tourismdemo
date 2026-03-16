@@ -19,12 +19,33 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
-app.use('/uploads', express.static(uploadsDir));
+app.use(
+  '/uploads',
+  express.static(uploadsDir, {
+    fallthrough: false,
+  })
+);
+app.use('/uploads', (err, req, res, _next) => {
+  // Express static file errors (permissions, missing file, etc.)
+  const code = err?.code;
+  console.error('Uploads error:', {
+    code,
+    message: err?.message,
+    path: err?.path,
+    url: req.originalUrl,
+    uploadsDir,
+  });
+  if (code === 'ENOENT') return res.status(404).send('Not found');
+  if (code === 'EACCES' || code === 'EPERM') return res.status(403).send('Forbidden');
+  return res.status(500).send('Uploads error');
+});
 
 // Public API – all from database
 app.get('/api/attractions', async (req, res) => {

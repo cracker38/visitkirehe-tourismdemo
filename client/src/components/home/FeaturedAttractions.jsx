@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { resolveMediaUrl } from '../../api/apiUrl'
 
 export default function FeaturedAttractions({ attractions }) {
   if (!attractions?.length) return null
@@ -33,7 +34,7 @@ export default function FeaturedAttractions({ attractions }) {
               >
                 <div className="aspect-[4/3] overflow-hidden">
                   <img
-                    src={item.image}
+                    src={resolveMediaUrl(item.image)}
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
