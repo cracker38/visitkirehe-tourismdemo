@@ -54,7 +54,7 @@ jobs:
 
             # If repo not cloned yet, clone it; otherwise pull latest
             if [ ! -d "/home/${{ secrets.CPANEL_USER }}/visitkirehe/.git" ]; then
-              git clone https://github.com/YOUR_GITHUB_USER/YOUR_REPO_NAME.git /home/${{ secrets.CPANEL_USER }}/visitkirehe
+              git clone https://github.com/cracker38/visitkirehe-tourismdemo.git /home/${{ secrets.CPANEL_USER }}/visitkirehe
             else
               cd /home/${{ secrets.CPANEL_USER }}/visitkirehe
               git pull
