@@ -1,0 +1,69 @@
+name: Deploy VisitKirehe
+
+on:
+  push:
+    branches: [ "main" ]  # change if your main branch has a different name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.20.0"
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install and build client
+        run: |
+          cd client
+          npm ci
+          npm run build
+
+      # Upload built frontend (client/dist) to subdomain document root
+      - name: Upload client dist to cPanel
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.CPANEL_HOST }}      # app.sharedlord.com
+          username: ${{ secrets.CPANEL_USER }}  # cypadico930
+          key: ${{ secrets.CPANEL_SSH_KEY }}    # private key content
+          port: ${{ secrets.CPANEL_PORT }}      # usually 22
+          source: "client/dist/*"
+          target: "/home/${{ secrets.CPANEL_USER }}/public_html/visitkirehe.cypadi.com/"
+          strip_components: 2
+
+      # Sync backend code to server and restart Node app
+      - name: Deploy backend and restart Node app
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: ${{ secrets.CPANEL_PORT }}
+          script: |
+            set -e
+
+            # Ensure project directory exists
+            mkdir -p /home/${{ secrets.CPANEL_USER }}/visitkirehe
+
+            # If repo not cloned yet, clone it; otherwise pull latest
+            if [ ! -d "/home/${{ secrets.CPANEL_USER }}/visitkirehe/.git" ]; then
+              git clone https://github.com/YOUR_GITHUB_USER/YOUR_REPO_NAME.git /home/${{ secrets.CPANEL_USER }}/visitkirehe
+            else
+              cd /home/${{ secrets.CPANEL_USER }}/visitkirehe
+              git pull
+            fi
+
+            # Install backend deps
+            cd /home/${{ secrets.CPANEL_USER }}/visitkirehe/server
+            npm ci || npm install
+
+            # Restart Node app via Passenger (common cPanel method)
+            mkdir -p tmp
+            touch tmp/restart.txt
