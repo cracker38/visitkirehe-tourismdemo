@@ -2,7 +2,7 @@ name: Deploy VisitKirehe
 
 on:
   push:
-    branches: [ "main" ]  # change if your main branch has a different name
+    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -30,15 +30,15 @@ jobs:
       - name: Upload client dist to cPanel
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.CPANEL_HOST }}      # app.sharedlord.com
-          username: ${{ secrets.CPANEL_USER }}  # cypadico930
-          key: ${{ secrets.CPANEL_SSH_KEY }}    # private key content
-          port: ${{ secrets.CPANEL_PORT }}      # usually 22
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: ${{ secrets.CPANEL_PORT }}
           source: "client/dist/*"
           target: "/home/${{ secrets.CPANEL_USER }}/public_html/visitkirehe.cypadi.com/"
           strip_components: 2
 
-      # Upload backend source (exclude uploads)
+      # Upload backend source (exclude uploads and node_modules)
       - name: Upload server source to cPanel
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -50,7 +50,7 @@ jobs:
           target: "/home/${{ secrets.CPANEL_USER }}/visitkirehe/"
           strip_components: 0
 
-      # Install backend deps and restart Node app
+      # Install backend deps in cPanel nodevenv and restart app
       - name: Restart backend app
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -60,9 +60,23 @@ jobs:
           port: ${{ secrets.CPANEL_PORT }}
           script: |
             set -e
-            cd /home/${{ secrets.CPANEL_USER }}/visitkirehe/server
-            npm ci || npm install
 
-            # Restart Node app via Passenger (common cPanel method)
+            APP_ROOT="/home/${{ secrets.CPANEL_USER }}/visitkirehe/server"
+            VENV_ACTIVATE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server/bin/activate"
+
+            cd "$APP_ROOT"
+
+            # Activate cPanel Node app environment so npm/node are available.
+            if [ -f "$VENV_ACTIVATE" ]; then
+              source "$VENV_ACTIVATE"
+            fi
+
+            if command -v npm >/dev/null 2>&1; then
+              npm ci || npm install
+            else
+              echo "npm not found in SSH session; skipping install."
+            fi
+
+            # Restart Node app (Passenger)
             mkdir -p tmp
             touch tmp/restart.txt
