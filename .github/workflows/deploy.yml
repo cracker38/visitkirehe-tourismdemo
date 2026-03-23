@@ -38,8 +38,20 @@ jobs:
           target: "/home/${{ secrets.CPANEL_USER }}/public_html/visitkirehe.cypadi.com/"
           strip_components: 2
 
-      # Sync backend code to server and restart Node app
-      - name: Deploy backend and restart Node app
+      # Upload backend source (exclude uploads)
+      - name: Upload server source to cPanel
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: ${{ secrets.CPANEL_PORT }}
+          source: "server/*,!server/uploads/*,!server/node_modules/*"
+          target: "/home/${{ secrets.CPANEL_USER }}/visitkirehe/"
+          strip_components: 0
+
+      # Install backend deps and restart Node app
+      - name: Restart backend app
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.CPANEL_HOST }}
@@ -48,29 +60,7 @@ jobs:
           port: ${{ secrets.CPANEL_PORT }}
           script: |
             set -e
-            PROJECT_DIR="/home/${{ secrets.CPANEL_USER }}/visitkirehe"
-            REPO_URL="https://github.com/cracker38/visitkirehe-tourismdemo.git"
-
-            # Ensure project directory exists and is a git repo.
-            if [ -d "$PROJECT_DIR/.git" ]; then
-              cd "$PROJECT_DIR"
-              git fetch origin
-              git reset --hard origin/main
-            elif [ -d "$PROJECT_DIR" ] && [ "$(ls -A "$PROJECT_DIR")" ]; then
-              cd "$PROJECT_DIR"
-              git init
-              git remote remove origin 2>/dev/null || true
-              git remote add origin "$REPO_URL"
-              git fetch origin
-              git checkout -B main origin/main
-            else
-              rm -rf "$PROJECT_DIR"
-              git clone "$REPO_URL" "$PROJECT_DIR"
-              cd "$PROJECT_DIR"
-            fi
-
-            # Install backend deps
-            cd "$PROJECT_DIR/server"
+            cd /home/${{ secrets.CPANEL_USER }}/visitkirehe/server
             npm ci || npm install
 
             # Restart Node app via Passenger (common cPanel method)
