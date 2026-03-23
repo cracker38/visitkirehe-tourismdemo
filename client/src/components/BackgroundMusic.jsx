@@ -57,47 +57,16 @@ export default function BackgroundMusic() {
     video.volume = muted ? 0 : DEFAULT_VOLUME
   }, [muted])
 
-  const handlePlayClick = (e) => {
-    e.preventDefault()
-    const video = videoRef.current
-    if (!video) return
-    video.muted = false
-    video.volume = DEFAULT_VOLUME
-    video.play()
-      .then(() => {
-        setPlaying(true)
-        setBlocked(false)
-      })
-      .catch(() => {})
-  }
-
-  const { blocked } = useAudio()
-
   return (
-    <>
-      <video
-        ref={videoRef}
-        src={VIDEO_SRC}
-        loop
-        playsInline
-        preload="auto"
-        muted={false}
-        className="hidden"
-        aria-label="Background video"
-      />
-
-      {blocked && (
-        <button
-          type="button"
-          onClick={handlePlayClick}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 focus:outline-none focus:ring-2 focus:ring-nature"
-          aria-label="Click to play"
-        >
-          <span className="text-white text-center text-xl font-medium drop-shadow-lg px-6 py-4 bg-nature rounded-lg hover:bg-nature-dark transition-colors">
-            Click to play
-          </span>
-        </button>
-      )}
-    </>
+    <video
+      ref={videoRef}
+      src={VIDEO_SRC}
+      loop
+      playsInline
+      preload="auto"
+      muted={false}
+      className="hidden"
+      aria-label="Background video"
+    />
   )
 }
