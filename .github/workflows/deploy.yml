@@ -48,20 +48,29 @@ jobs:
           port: ${{ secrets.CPANEL_PORT }}
           script: |
             set -e
+            PROJECT_DIR="/home/${{ secrets.CPANEL_USER }}/visitkirehe"
+            REPO_URL="https://github.com/cracker38/visitkirehe-tourismdemo.git"
 
-            # Ensure project directory exists
-            mkdir -p /home/${{ secrets.CPANEL_USER }}/visitkirehe
-
-            # If repo not cloned yet, clone it; otherwise pull latest
-            if [ ! -d "/home/${{ secrets.CPANEL_USER }}/visitkirehe/.git" ]; then
-              git clone https://github.com/cracker38/visitkirehe-tourismdemo.git /home/${{ secrets.CPANEL_USER }}/visitkirehe
+            # Ensure project directory exists and is a git repo.
+            if [ -d "$PROJECT_DIR/.git" ]; then
+              cd "$PROJECT_DIR"
+              git fetch origin
+              git reset --hard origin/main
+            elif [ -d "$PROJECT_DIR" ] && [ "$(ls -A "$PROJECT_DIR")" ]; then
+              cd "$PROJECT_DIR"
+              git init
+              git remote remove origin 2>/dev/null || true
+              git remote add origin "$REPO_URL"
+              git fetch origin
+              git checkout -B main origin/main
             else
-              cd /home/${{ secrets.CPANEL_USER }}/visitkirehe
-              git pull
+              rm -rf "$PROJECT_DIR"
+              git clone "$REPO_URL" "$PROJECT_DIR"
+              cd "$PROJECT_DIR"
             fi
 
             # Install backend deps
-            cd /home/${{ secrets.CPANEL_USER }}/visitkirehe/server
+            cd "$PROJECT_DIR/server"
             npm ci || npm install
 
             # Restart Node app via Passenger (common cPanel method)
