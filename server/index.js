@@ -15,6 +15,7 @@ import {
   getTestimonials,
   createMessage,
 } from './db/queries.js';
+import pool from './db/connection.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -33,14 +34,19 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://127.0.0.1:3000',
 ];
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (/^https?:\/\/([a-z0-9-]+\.)?visitkirehe\.cypadi\.com$/i.test(origin)) return true;
+  if (/^https?:\/\/([a-z0-9-]+\.)?cypadi\.com$/i.test(origin)) return true;
+  return false;
+};
 app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    cb(null, false);
-  },
+  origin: (origin, cb) => cb(null, isAllowedOrigin(origin)),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
 }));
 app.use(express.json());
 app.use(
@@ -62,6 +68,20 @@ app.use('/uploads', (err, req, res, _next) => {
   if (code === 'ENOENT') return res.status(404).send('Not found');
   if (code === 'EACCES' || code === 'EPERM') return res.status(403).send('Forbidden');
   return res.status(500).send('Uploads error');
+});
+
+// Health check (no DB) – verify API is reachable
+app.get('/api/health', (req, res) => res.json({ ok: true, service: 'visitkirehe-api' }));
+
+// DB health check – verify database connection
+app.get('/api/health/db', async (req, res) => {
+  try {
+    await pool.execute('SELECT 1');
+    res.json({ ok: true, db: 'connected' });
+  } catch (err) {
+    console.error('DB health check failed:', err.message);
+    res.status(500).json({ ok: false, db: 'error', message: err.message });
+  }
 });
 
 // Public API – all from database
@@ -171,5 +191,21 @@ app.post('/api/newsletter', (req, res) => {
 });
 
 app.use('/api/admin', adminRoutes);
+
+// 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Global error handler – ensure CORS headers on errors
+app.use((err, req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  console.error('Unhandled error:', err);
+  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+});
 
 app.listen(PORT, () => console.log(`Visit Kirehe API running on http://localhost:${PORT}`));
