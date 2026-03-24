@@ -1,7 +1,13 @@
-# Proxy /api and /uploads to Node app (same-origin, no CORS)
+# SPA rewrite for React Router (supports /admin and deep links)
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteCond %{REQUEST_URI} ^/api [OR]
-  RewriteCond %{REQUEST_URI} ^/uploads
-  RewriteRule ^(.*)$ https://api.visitkirehe.cypadi.com/$1 [P,L]
+  RewriteBase /
+
+  # If requested file or directory exists, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Otherwise, send all routes to index.html
+  RewriteRule ^ index.html [L]
 </IfModule>
