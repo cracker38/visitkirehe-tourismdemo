@@ -57,6 +57,33 @@ export default function BackgroundMusic() {
     video.volume = muted ? 0 : DEFAULT_VOLUME
   }, [muted])
 
+  // On first user interaction anywhere, try to play (unlocks autoplay for session)
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const tryPlayOnInteraction = () => {
+      video.muted = false
+      video.volume = DEFAULT_VOLUME
+      video.play()
+        .then(() => {
+          setPlaying(true)
+          setBlocked(false)
+          localStorage.setItem('visitkirehe_sound_approved', '1')
+        })
+        .catch(() => {})
+    }
+
+    const events = ['click', 'touchstart', 'keydown']
+    const handler = () => {
+      events.forEach((e) => document.removeEventListener(e, handler))
+      tryPlayOnInteraction()
+    }
+    events.forEach((e) => document.addEventListener(e, handler, { once: true, passive: true }))
+
+    return () => events.forEach((e) => document.removeEventListener(e, handler))
+  }, [setPlaying, setBlocked])
+
   return (
     <video
       ref={videoRef}
