@@ -24,7 +24,24 @@ const uploadsDir = process.env.UPLOADS_DIR
   : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = [
+  'https://visitkirehe.cypadi.com',
+  'https://www.visitkirehe.cypadi.com',
+  'https://api.visitkirehe.cypadi.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 app.use(
   '/uploads',
