@@ -26,20 +26,13 @@ jobs:
           npm ci
           npm run build
 
-      # Upload built frontend (client/dist) to subdomain document root
-      - name: Upload client dist to cPanel
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          source: "client/dist/*"
-          target: "/home/${{ secrets.CPANEL_USER }}/public_html/visitkirehe.cypadi.com/"
-          strip_components: 2
+      # Copy built frontend into server (same-origin: no CORS)
+      - name: Prepare combined app
+        run: |
+          rm -rf server/public
+          cp -r client/dist server/public
 
-      # Upload backend source (exclude uploads and node_modules)
-      - name: Upload server source to cPanel
+      - name: Upload combined app to cPanel
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.CPANEL_HOST }}

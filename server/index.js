@@ -21,6 +21,13 @@ import pool from './db/connection.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Static frontend (built client) – same origin = no CORS
+const publicDir = path.join(__dirname, 'public');
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir, { index: false }));
+}
+
 const uploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, 'uploads');
@@ -192,6 +199,15 @@ app.post('/api/newsletter', (req, res) => {
 });
 
 app.use('/api/admin', adminRoutes);
+
+// SPA fallback – serve index.html for frontend routes
+const indexPath = path.join(publicDir, 'index.html');
+if (fs.existsSync(indexPath)) {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+    res.sendFile(indexPath);
+  });
+}
 
 // 404
 app.use((req, res) => {
