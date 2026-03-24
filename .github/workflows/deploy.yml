@@ -73,7 +73,7 @@ jobs:
             set -e
 
             APP_ROOT="/home/${{ secrets.CPANEL_USER }}/visitkirehe/server"
-            VENV_ACTIVATE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server/bin/activate"
+            VENV_ACTIVATE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server/20/bin/activate"
 
             cd "$APP_ROOT"
 
@@ -95,11 +95,12 @@ jobs:
               source "$VENV_ACTIVATE"
             fi
 
-            if command -v npm >/dev/null 2>&1; then
-              npm ci || npm install
-            else
-              echo "npm not found in SSH session; skipping install."
+            if ! command -v npm >/dev/null 2>&1; then
+              echo "npm not found after activating nodevenv."
+              exit 1
             fi
+
+            npm ci || npm install
 
             # Restart Node app (Passenger)
             mkdir -p tmp
