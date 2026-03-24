@@ -32,6 +32,18 @@ jobs:
           rm -rf server/public
           cp -r client/dist server/public
 
+      # Deploy frontend to main domain (proxy /api via .htaccess)
+      - name: Upload frontend to main domain
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: ${{ secrets.CPANEL_PORT }}
+          source: "client/dist/"
+          target: "/home/${{ secrets.CPANEL_USER }}/public_html/visitkirehe.cypadi.com/"
+          strip_components: 2
+
       - name: Upload combined app to cPanel
         uses: appleboy/scp-action@v0.1.7
         with:

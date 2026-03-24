@@ -1,10 +1,18 @@
 # cPanel Setup for Visit Kirehe
 
-## Same-Origin Setup (No CORS)
+## Option A: Apache Proxy (recommended – no cPanel changes needed)
 
-The app serves both frontend and API from **one Node.js app**. Follow these steps in cPanel:
+The deploy puts an `.htaccess` in the frontend folder that proxies `/api` and `/uploads` to the Node app. This gives same-origin requests (no CORS).
 
-### 1. Point the main domain to the Node app
+**Requirements:** Your host must have `mod_proxy` and `mod_proxy_http` enabled (common on cPanel). If you get 500 errors on `/api/*`, ask your host to enable them.
+
+**No extra setup** – just push and the frontend will use the proxy.
+
+---
+
+## Option B: Main domain points to Node app
+
+If the proxy does not work, point the main domain to the Node app:
 
 - Go to **Setup Node.js App** (or **Application Manager**)
 - Create or edit your app
@@ -12,7 +20,9 @@ The app serves both frontend and API from **one Node.js app**. Follow these step
 - Set **Application URL** to: `https://visitkirehe.cypadi.com` (main domain)
 - Save and restart
 
-### 2. GitHub Secrets (Settings → Secrets and variables → Actions)
+---
+
+## GitHub Secrets (Settings → Secrets and variables → Actions)
 
 Add these so the deploy can create `.env` on the server:
 

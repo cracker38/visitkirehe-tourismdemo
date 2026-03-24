@@ -1,0 +1,7 @@
+# Proxy /api and /uploads to Node app (same-origin, no CORS)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_URI} ^/api [OR]
+  RewriteCond %{REQUEST_URI} ^/uploads
+  RewriteRule ^(.*)$ https://api.visitkirehe.cypadi.com/$1 [P,L]
+</IfModule>
