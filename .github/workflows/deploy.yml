@@ -51,9 +51,7 @@ jobs:
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: ${{ secrets.CPANEL_PORT }}
-          # Exclude uploads and node_modules (keep existing server runtime + user uploaded images).
-          # Also exclude server/.env so we never overwrite it with a possibly wrong committed value.
-          source: "server/*,!server/uploads/*,!server/node_modules/*,!server/.env"
+          source: "server/*,!server/uploads/*,!server/node_modules/*"
           target: "/home/${{ secrets.CPANEL_USER }}/visitkirehe/"
           strip_components: 0
 
@@ -75,82 +73,34 @@ jobs:
             set -e
 
             APP_ROOT="/home/${{ secrets.CPANEL_USER }}/visitkirehe/server"
-            # IMPORTANT: On your server, nodevenv path is:
-            #   /home/${CPANEL_USER}/nodevenv/visitkirehe/server/bin/activate
-            # (there is no /20 segment)
-            VENV_BASE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server"
-            # Your server uses cPanel wrappers under .../server/20/bin/activate + npm.
-            VENV_ACTIVATE_DEFAULT="$VENV_BASE/bin/activate"
-            VENV_ACTIVATE_V20="$VENV_BASE/20/bin/activate"
-            VENV_ACTIVATE=""
-            if [ -f "$VENV_ACTIVATE_DEFAULT" ]; then
-              VENV_ACTIVATE="$VENV_ACTIVATE_DEFAULT"
-            elif [ -f "$VENV_ACTIVATE_V20" ]; then
-              VENV_ACTIVATE="$VENV_ACTIVATE_V20"
-            fi
+            VENV_ACTIVATE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server/20/bin/activate"
 
             cd "$APP_ROOT"
 
-            # If GitHub Secrets are set, write .env from them.
-            # If they are missing, do NOT overwrite the existing working .env.
+            # Create .env from GitHub Secrets if DB credentials are set
             if [ -n "$DB_USER" ] && [ -n "$DB_PASSWORD" ] && [ -n "$DB_NAME" ]; then
               {
                 printf 'DB_HOST=%s\n' "${DB_HOST:-localhost}"
                 printf 'DB_USER=%s\n' "$DB_USER"
                 printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
                 printf 'DB_NAME=%s\n' "$DB_NAME"
-                printf 'NODE_ENV=production\n'
-                printf 'UPLOADS_DIR=%s\n' "/home/${{ secrets.CPANEL_USER }}/visitkirehe/server/uploads"
               } > .env
-              echo "Updated .env on server from secrets"
+              echo "Created .env from secrets"
             elif [ ! -f .env ]; then
-              # Minimal fallback so Passenger can start even if secrets are missing.
-              {
-                printf 'DB_HOST=%s\n' "${DB_HOST:-localhost}"
-                printf 'DB_USER=%s\n' ''
-                printf 'DB_PASSWORD=%s\n' ''
-                printf 'DB_NAME=%s\n' ''
-                printf 'NODE_ENV=production\n'
-                printf 'UPLOADS_DIR=%s\n' "/home/${{ secrets.CPANEL_USER }}/visitkirehe/server/uploads"
-              } > .env
-              echo "WARNING: GitHub secrets missing; wrote minimal .env."
-            else
-              echo "Using existing server/.env (GitHub DB secrets not provided)."
+              echo "WARNING: No .env found. Add DB_HOST, DB_USER, DB_PASSWORD, DB_NAME as GitHub secrets, or create .env manually on the server."
             fi
 
             # Activate cPanel Node app environment so npm/node are available.
             if [ -f "$VENV_ACTIVATE" ]; then
-              # shellcheck disable=SC1090
               source "$VENV_ACTIVATE"
             fi
 
-            # Robust npm discovery (PATH can vary across cPanel setups).
-            NPM_BIN=""
-            if command -v npm >/dev/null 2>&1; then
-              NPM_BIN="$(command -v npm)"
-            else
-              # Look for npm under versioned folders like .../20/bin/npm, .../18/bin/npm, etc.
-              for candidate in "$VENV_BASE"/*/bin/npm; do
-                if [ -x "$candidate" ]; then
-                  NPM_BIN="$candidate"
-                  break
-                fi
-              done
-            fi
-
-            if [ -z "$NPM_BIN" ]; then
-              echo "ERROR: npm not found."
-              echo "Checked:"
-              echo "- PATH npm"
-              echo "- $VENV_BASE/bin/npm"
-              echo "- $VENV_BASE/20/bin/npm"
-              echo "- $VENV_BASE/*/bin/npm"
-              ls -la "$VENV_BASE" || true
+            if ! command -v npm >/dev/null 2>&1; then
+              echo "npm not found after activating nodevenv."
               exit 1
             fi
 
-            echo "Using npm at: $NPM_BIN"
-            "$NPM_BIN" ci || "$NPM_BIN" install
+            npm ci || npm install
 
             # Restart Node app (Passenger)
             mkdir -p tmp
