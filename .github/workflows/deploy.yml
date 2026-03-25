@@ -51,7 +51,7 @@ jobs:
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: ${{ secrets.CPANEL_PORT }}
-          source: "server/*,!server/uploads/*,!server/node_modules/*"
+          source: "server/*,!server/.env,!server/uploads/*,!server/node_modules/*"
           target: "/home/${{ secrets.CPANEL_USER }}/visitkirehe/"
           strip_components: 0
 
@@ -77,17 +77,26 @@ jobs:
 
             cd "$APP_ROOT"
 
-            # Create .env from GitHub Secrets if DB credentials are set
-            if [ -n "$DB_USER" ] && [ -n "$DB_PASSWORD" ] && [ -n "$DB_NAME" ]; then
-              {
-                printf 'DB_HOST=%s\n' "${DB_HOST:-localhost}"
-                printf 'DB_USER=%s\n' "$DB_USER"
-                printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
-                printf 'DB_NAME=%s\n' "$DB_NAME"
-              } > .env
-              echo "Created .env from secrets"
-            elif [ ! -f .env ]; then
-              echo "WARNING: No .env found. Add DB_HOST, DB_USER, DB_PASSWORD, DB_NAME as GitHub secrets, or create .env manually on the server."
+            # Create .env only if missing (prevents credentials changing unnoticed).
+            # If .env already exists, we leave it untouched.
+            if [ ! -f .env ]; then
+              if [ -n "$DB_USER" ] && [ -n "$DB_PASSWORD" ] && [ -n "$DB_NAME" ]; then
+                {
+                  printf 'DB_HOST=%s\n' "${DB_HOST:-localhost}"
+                  printf 'DB_USER=%s\n' "$DB_USER"
+                  printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
+                  printf 'DB_NAME=%s\n' "$DB_NAME"
+                  printf 'NODE_ENV=production\n'
+                  printf 'UPLOADS_DIR=%s\n' "$APP_ROOT/uploads"
+                  printf 'PORT=5000\n'
+                } > .env
+                echo "Created .env from secrets"
+              else
+                echo "DB secrets missing (DB_USER/DB_PASSWORD/DB_NAME) and .env does not exist."
+                exit 1
+              fi
+            else
+              echo ".env already exists; leaving it unchanged."
             fi
 
             # Activate cPanel Node app environment so npm/node are available.
@@ -105,3 +114,16 @@ jobs:
             # Restart Node app (Passenger)
             mkdir -p tmp
             touch tmp/restart.txt
+
+            # Wait briefly and verify API is up
+            sleep 5
+            if command -v curl >/dev/null 2>&1; then
+              PORT_TO_CHECK="$(grep '^PORT=' .env | cut -d= -f2 || true)"
+              PORT_TO_CHECK="${PORT_TO_CHECK:-5000}"
+              curl -fsS "http://127.0.0.1:${PORT_TO_CHECK}/api/health/db" >/dev/null || {
+                echo "Health check failed after restart."
+                exit 1
+              }
+            else
+              echo "curl not found; skipping health check."
+            fi
