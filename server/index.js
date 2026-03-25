@@ -20,11 +20,22 @@ import pool from './db/connection.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// Catch startup/runtime crashes so Passenger logs show the real error.
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
+
 // Passenger/cPanel may provide the port in different env vars depending on configuration.
 // Use whatever is available and fall back to 5000 for local development.
 const PORT =
-  Number.parseInt(process.env.PORT || process.env.PASSENGER_APP_PORT || process.env.PASSENGER_PORT, 10) ||
-  5000;
+  Number.parseInt(
+    process.env.PORT || process.env.PASSENGER_APP_PORT || process.env.PASSENGER_PORT,
+    10,
+  ) || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Static frontend (built client) – same origin = no CORS
@@ -37,6 +48,18 @@ const uploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+// Useful boot log for cPanel/Passenger (does not print DB passwords).
+console.log(
+  'API boot:',
+  JSON.stringify({
+    PORT,
+    HOST,
+    uploadsDir,
+    UPLOADS_DIR_ENV: process.env.UPLOADS_DIR || null,
+    DB_NAME: process.env.DB_NAME || null,
+  }),
+);
 
 const allowedOrigins = [
   'https://visitkirehe.cypadi.com',
