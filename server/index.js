@@ -19,6 +19,8 @@ import {
 import pool from './db/connection.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const isMain = process.argv[1] ? path.resolve(process.argv[1]) === __filename : false;
 const app = express();
 
 // Catch startup/runtime crashes so Passenger logs show the real error.
@@ -50,16 +52,18 @@ const uploadsDir = process.env.UPLOADS_DIR
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Useful boot log for cPanel/Passenger (does not print DB passwords).
-console.log(
-  'API boot:',
-  JSON.stringify({
-    PORT,
-    HOST,
-    uploadsDir,
-    UPLOADS_DIR_ENV: process.env.UPLOADS_DIR || null,
-    DB_NAME: process.env.DB_NAME || null,
-  }),
-);
+if (isMain) {
+  console.log(
+    'API boot:',
+    JSON.stringify({
+      PORT,
+      HOST,
+      uploadsDir,
+      UPLOADS_DIR_ENV: process.env.UPLOADS_DIR || null,
+      DB_NAME: process.env.DB_NAME || null,
+    }),
+  );
+}
 
 const allowedOrigins = [
   'https://visitkirehe.cypadi.com',
@@ -253,6 +257,10 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
 
-app.listen(PORT, HOST, () =>
-  console.log(`Visit Kirehe API running on http://${HOST}:${PORT}`)
-);
+if (isMain) {
+  app.listen(PORT, HOST, () =>
+    console.log(`Visit Kirehe API running on http://${HOST}:${PORT}`)
+  );
+}
+
+export default app;
