@@ -51,7 +51,9 @@ jobs:
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: ${{ secrets.CPANEL_PORT }}
-          source: "server/*,!server/uploads/*,!server/node_modules/*"
+          # Exclude uploads and node_modules (keep existing server runtime + user uploaded images).
+          # Also exclude server/.env so we never overwrite it with a possibly wrong committed value.
+          source: "server/*,!server/uploads/*,!server/node_modules/*,!server/.env"
           target: "/home/${{ secrets.CPANEL_USER }}/visitkirehe/"
           strip_components: 0
 
@@ -73,34 +75,44 @@ jobs:
             set -e
 
             APP_ROOT="/home/${{ secrets.CPANEL_USER }}/visitkirehe/server"
-            VENV_ACTIVATE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server/20/bin/activate"
+            # IMPORTANT: On your server, nodevenv path is:
+            #   /home/${CPANEL_USER}/nodevenv/visitkirehe/server/bin/activate
+            # (there is no /20 segment)
+            VENV_ACTIVATE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server/bin/activate"
+            VENV_BASE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server"
+            NPM_BIN="$VENV_BASE/bin/npm"
+            NODE_BIN="$VENV_BASE/bin/node"
 
             cd "$APP_ROOT"
 
-            # Create .env from GitHub Secrets if DB credentials are set
-            if [ -n "$DB_USER" ] && [ -n "$DB_PASSWORD" ] && [ -n "$DB_NAME" ]; then
-              {
-                printf 'DB_HOST=%s\n' "${DB_HOST:-localhost}"
-                printf 'DB_USER=%s\n' "$DB_USER"
-                printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
-                printf 'DB_NAME=%s\n' "$DB_NAME"
-              } > .env
-              echo "Created .env from secrets"
-            elif [ ! -f .env ]; then
-              echo "WARNING: No .env found. Add DB_HOST, DB_USER, DB_PASSWORD, DB_NAME as GitHub secrets, or create .env manually on the server."
-            fi
+            # Always write a correct .env on the server so a bad committed .env
+            # (or missing UPLOADS_DIR) can never break Passenger startup.
+            {
+              printf 'DB_HOST=%s\n' "${DB_HOST:-localhost}"
+              printf 'DB_USER=%s\n' "${DB_USER:-}"
+              printf 'DB_PASSWORD=%s\n' "${DB_PASSWORD:-}"
+              printf 'DB_NAME=%s\n' "${DB_NAME:-}"
+              printf 'NODE_ENV=production\n'
+              printf 'UPLOADS_DIR=%s\n' "/home/${{ secrets.CPANEL_USER }}/visitkirehe/server/uploads"
+            } > .env
+            echo "Updated .env on server from secrets"
 
             # Activate cPanel Node app environment so npm/node are available.
             if [ -f "$VENV_ACTIVATE" ]; then
+              # shellcheck disable=SC1090
               source "$VENV_ACTIVATE"
             fi
 
-            if ! command -v npm >/dev/null 2>&1; then
-              echo "npm not found after activating nodevenv."
+            # Prefer running npm directly from nodevenv binaries (more reliable than relying on PATH).
+            if [ -x "$NPM_BIN" ]; then
+              "$NPM_BIN" ci || "$NPM_BIN" install
+            elif command -v npm >/dev/null 2>&1; then
+              npm ci || npm install
+            else
+              echo "ERROR: npm not found. Checked: $NPM_BIN"
+              ls -la "$VENV_BASE" || true
               exit 1
             fi
-
-            npm ci || npm install
 
             # Restart Node app (Passenger)
             mkdir -p tmp
