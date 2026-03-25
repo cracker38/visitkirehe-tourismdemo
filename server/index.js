@@ -20,7 +20,12 @@ import pool from './db/connection.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 5000;
+// Passenger/cPanel may provide the port in different env vars depending on configuration.
+// Use whatever is available and fall back to 5000 for local development.
+const PORT =
+  Number.parseInt(process.env.PORT || process.env.PASSENGER_APP_PORT || process.env.PASSENGER_PORT, 10) ||
+  5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Static frontend (built client) – same origin = no CORS
 const publicDir = path.join(__dirname, 'public');
@@ -225,4 +230,6 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
 
-app.listen(PORT, () => console.log(`Visit Kirehe API running on http://localhost:${PORT}`));
+app.listen(PORT, HOST, () =>
+  console.log(`Visit Kirehe API running on http://${HOST}:${PORT}`)
+);
