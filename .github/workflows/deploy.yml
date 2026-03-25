@@ -80,8 +80,9 @@ jobs:
             # (there is no /20 segment)
             VENV_ACTIVATE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server/bin/activate"
             VENV_BASE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server"
-            NPM_BIN="$VENV_BASE/bin/npm"
-            NODE_BIN="$VENV_BASE/bin/node"
+            # Note: some cPanel setups place npm under .../server/20/bin/npm.
+            NPM_BIN_DEFAULT="$VENV_BASE/bin/npm"
+            NPM_BIN_V20="$VENV_BASE/20/bin/npm"
 
             cd "$APP_ROOT"
 
@@ -103,13 +104,18 @@ jobs:
               source "$VENV_ACTIVATE"
             fi
 
-            # Prefer running npm directly from nodevenv binaries (more reliable than relying on PATH).
-            if [ -x "$NPM_BIN" ]; then
-              "$NPM_BIN" ci || "$NPM_BIN" install
-            elif command -v npm >/dev/null 2>&1; then
+            # Prefer running npm after activation (PATH should be correct).
+            if command -v npm >/dev/null 2>&1; then
               npm ci || npm install
+            elif [ -x "$NPM_BIN_DEFAULT" ]; then
+              "$NPM_BIN_DEFAULT" ci || "$NPM_BIN_DEFAULT" install
+            elif [ -x "$NPM_BIN_V20" ]; then
+              "$NPM_BIN_V20" ci || "$NPM_BIN_V20" install
             else
-              echo "ERROR: npm not found. Checked: $NPM_BIN"
+              echo "ERROR: npm not found."
+              echo "Checked:"
+              echo "- $NPM_BIN_DEFAULT"
+              echo "- $NPM_BIN_V20"
               ls -la "$VENV_BASE" || true
               exit 1
             fi
