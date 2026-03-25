@@ -78,10 +78,16 @@ jobs:
             # IMPORTANT: On your server, nodevenv path is:
             #   /home/${CPANEL_USER}/nodevenv/visitkirehe/server/bin/activate
             # (there is no /20 segment)
-            VENV_ACTIVATE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server/bin/activate"
             VENV_BASE="/home/${{ secrets.CPANEL_USER }}/nodevenv/visitkirehe/server"
-            # Note: some cPanel setups place npm under .../server/<version>/bin/npm.
-            NPM_BIN_DEFAULT="$VENV_BASE/bin/npm"
+            # Your server uses cPanel wrappers under .../server/20/bin/activate + npm.
+            VENV_ACTIVATE_DEFAULT="$VENV_BASE/bin/activate"
+            VENV_ACTIVATE_V20="$VENV_BASE/20/bin/activate"
+            VENV_ACTIVATE=""
+            if [ -f "$VENV_ACTIVATE_DEFAULT" ]; then
+              VENV_ACTIVATE="$VENV_ACTIVATE_DEFAULT"
+            elif [ -f "$VENV_ACTIVATE_V20" ]; then
+              VENV_ACTIVATE="$VENV_ACTIVATE_V20"
+            fi
 
             cd "$APP_ROOT"
 
@@ -122,8 +128,6 @@ jobs:
             NPM_BIN=""
             if command -v npm >/dev/null 2>&1; then
               NPM_BIN="$(command -v npm)"
-            elif [ -x "$NPM_BIN_DEFAULT" ]; then
-              NPM_BIN="$NPM_BIN_DEFAULT"
             else
               # Look for npm under versioned folders like .../20/bin/npm, .../18/bin/npm, etc.
               for candidate in "$VENV_BASE"/*/bin/npm; do
@@ -138,7 +142,8 @@ jobs:
               echo "ERROR: npm not found."
               echo "Checked:"
               echo "- PATH npm"
-              echo "- $NPM_BIN_DEFAULT"
+              echo "- $VENV_BASE/bin/npm"
+              echo "- $VENV_BASE/20/bin/npm"
               echo "- $VENV_BASE/*/bin/npm"
               ls -la "$VENV_BASE" || true
               exit 1
