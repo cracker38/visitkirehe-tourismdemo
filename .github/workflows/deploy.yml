@@ -41,7 +41,7 @@ jobs:
           source: "client/dist/"
           target: "/home/${{ secrets.CPANEL_USER }}/public_html/visitkirehe.cypadi.com/"
           strip_components: 2
-          timeout: 1200
+          timeout: 1200s
           command_timeout: 20m
 
       - name: Upload combined app to cPanel
@@ -56,7 +56,7 @@ jobs:
           source: "server/*,!server/.env,!server/uploads/*,!server/node_modules/*,!server/public/*"
           target: "/home/${{ secrets.CPANEL_USER }}/visitkirehe/"
           strip_components: 0
-          timeout: 1200
+          timeout: 1200s
           command_timeout: 20m
 
       # Install backend deps in cPanel nodevenv and restart app
