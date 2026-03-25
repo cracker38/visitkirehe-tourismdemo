@@ -30,12 +30,6 @@ jobs:
           npm ci
           npm run build
 
-      # Copy built frontend into server (same-origin: no CORS)
-      - name: Prepare combined app
-        run: |
-          rm -rf server/public
-          cp -r client/dist server/public
-
       # Deploy frontend to main domain (proxy /api via .htaccess)
       - name: Upload frontend to main domain
         uses: appleboy/scp-action@v0.1.7
@@ -47,6 +41,8 @@ jobs:
           source: "client/dist/"
           target: "/home/${{ secrets.CPANEL_USER }}/public_html/visitkirehe.cypadi.com/"
           strip_components: 2
+          timeout: 1200
+          command_timeout: 20m
 
       - name: Upload combined app to cPanel
         uses: appleboy/scp-action@v0.1.7
@@ -55,9 +51,13 @@ jobs:
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: ${{ secrets.CPANEL_PORT }}
-          source: "server/*,!server/.env,!server/uploads/*,!server/node_modules/*"
+          # Upload backend code but keep persistent uploads.
+          # Also avoid uploading server/public (frontend) to prevent duplicate huge uploads.
+          source: "server/*,!server/.env,!server/uploads/*,!server/node_modules/*,!server/public/*"
           target: "/home/${{ secrets.CPANEL_USER }}/visitkirehe/"
           strip_components: 0
+          timeout: 1200
+          command_timeout: 20m
 
       # Install backend deps in cPanel nodevenv and restart app
       - name: Restart backend app
