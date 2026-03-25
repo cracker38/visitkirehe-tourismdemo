@@ -28,7 +28,7 @@ export default function Hero() {
           transition={{ duration: 0.6 }}
           className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
         >
-          Discover the Beauty of Kirehe District Yacu
+          Discover the Beauty of Kirehe District Yacu Neza
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
