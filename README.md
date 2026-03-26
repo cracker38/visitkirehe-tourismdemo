@@ -2,7 +2,7 @@
 
 A modern, responsive tourism platform for **Kirehe District, Eastern Province of Rwanda**, built with **React** (frontend) and **Node.js** (backend).
 
-## Features
+## Features 
 
 - **Homepage**: Hero, featured attractions, things to do, accommodation, cultural experiences, travel info, gallery, events, testimonials, CTA
 - **Pages**: About Kirehe, Things to Do, Places to Visit, Accommodation, Events & Culture, Gallery, Travel Info, Contact, Blog, Plan Your Trip
