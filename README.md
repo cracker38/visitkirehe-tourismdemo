@@ -1,4 +1,4 @@
-# Visit Kirehe – Tourism Website ELIAS ELAIS ELAIS ELAIS ELAIS
+# Visit Kirehe – Tourism Website ELIAS
 
 A modern, responsive tourism platform for **Kirehe District, Eastern Province of Rwanda**, built with **React** (frontend) and **Node.js** (backend).
 
